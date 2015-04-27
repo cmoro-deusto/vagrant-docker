@@ -1,0 +1,31 @@
+---
+- hosts: all
+  sudo: true
+  vars:
+    docker_compose_version: 1.2.0
+  tasks:
+  - name: Docker | Install ppa key
+    apt_key: keyserver='http://keyserver.ubuntu.com:11371/pks/lookup?op=get&search=0x36A1D7869245C8950F966E92D8576A8BA88D21E9' id=A88D21E9 state=present
+  - name: Docker | Install ppa
+    apt_repository: repo='deb https://get.docker.io/ubuntu docker main' state=present
+  - name: Docker | Install package
+    apt: name=lxc-docker state=present
+  - name: Docker | Check service daemon
+    service: name=docker state=started
+  - name: Docker Compose Install
+    shell: >
+      curl -L https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+    args:
+      creates: /usr/local/bin/docker-compose
+  - name: Docker Compose Permissions
+    file:
+      path: /usr/local/bin/docker-compose
+      group: root
+      owner: root
+      mode: 0755
+  - name: Clone dotfile
+    git: repo=https://github.com/cmoro-deusto/dotfiles.git dest=/home/vagrant/.vim
+  - name: Source bash profile
+    lineinfile: dest=/home/vagrant/.bashrc line="source ~/.vim/bash_profile"
+  - name: Use vimrc
+    lineinfile: dest=/home/vagrant/.vimrc line="runtime vimrc" create=yes
